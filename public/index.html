@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Penyetoran Uang Terenkripsi</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>💰 Penyetoran Uang Terenkripsi (Cipher Transposisi)</h1>
+
+    <form id="depositForm">
+      <label>Nama:</label>
+      <input type="text" id="name" required>
+
+      <label>Jumlah (angka):</label>
+      <input type="text" id="amount" required>
+
+      <label>Catatan:</label>
+      <input type="text" id="note">
+
+      <label>Key (jumlah kolom):</label>
+      <input type="number" id="key" value="3" min="2" required>
+
+      <button type="submit">Kirim Setoran</button>
+    </form>
+
+    <h2>Hasil Enkripsi & Deskripsi</h2>
+    <div id="resultArea"></div>
+
+    <h2>📋 Daftar Setoran</h2>
+    <table id="depositsTable">
+      <thead>
+        <tr>
+          <th>ID</th><th>Nama</th><th>Encrypted Amount</th><th>Decrypted Amount</th>
+          <th>Encrypted Note</th><th>Decrypted Note</th><th>Key</th><th>Tanggal</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
