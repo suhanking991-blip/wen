@@ -4,43 +4,155 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Penyetoran Uang Terenkripsi</title>
-  <link rel="stylesheet" href="style.css">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-  <div class="container">
-    <h1>💰 Penyetoran Uang Terenkripsi (Cipher Transposisi)</h1>
+<body class="bg-light">
 
-    <form id="depositForm">
-      <label>Nama:</label>
-      <input type="text" id="name" required>
+  <div class="container my-5">
+    <div class="card shadow-lg p-4 rounded-4">
+      <h1 class="text-center mb-4 text-primary">OneKripsi</h1>
 
-      <label>Jumlah (angka):</label>
-      <input type="text" id="amount" required>
+      <form id="depositForm" class="row g-3">
+        <div class="col-md-6">
+          <label for="name" class="form-label fw-semibold">Nama</label>
+          <input type="text" class="form-control" id="name" required>
+        </div>
 
-      <label>Catatan:</label>
-      <input type="text" id="note">
+        <div class="col-md-6">
+          <label for="amount" class="form-label fw-semibold">Jumlah (angka)</label>
+          <input type="text" class="form-control" id="amount" required>
+        </div>
 
-      <label>Key (jumlah kolom):</label>
-      <input type="number" id="key" value="3" min="2" required>
+        <div class="col-md-6">
+          <label for="note" class="form-label fw-semibold">Catatan</label>
+          <input type="text" class="form-control" id="note">
+        </div>
 
-      <button type="submit">Kirim Setoran</button>
-    </form>
+        <div class="col-md-6">
+          <label for="key" class="form-label fw-semibold">Key (jumlah kolom)</label>
+          <input type="number" class="form-control" id="key" value="3" min="2" required>
+        </div>
 
-    <h2>Hasil Enkripsi & Deskripsi</h2>
-    <div id="resultArea"></div>
+        <div class="col-12 text-center mt-3">
+          <button type="submit" class="btn btn-primary px-5">Kirim Setoran</button>
+        </div>
+      </form>
+    </div>
 
-    <h2>📋 Daftar Setoran</h2>
-    <table id="depositsTable">
-      <thead>
-        <tr>
-          <th>ID</th><th>Nama</th><th>Encrypted Amount</th><th>Decrypted Amount</th>
-          <th>Encrypted Note</th><th>Decrypted Note</th><th>Key</th><th>Tanggal</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <div class="card mt-5 p-4 shadow-sm rounded-4">
+      <h2 class="text-center text-success mb-3">🔐 Hasil Enkripsi & Deskripsi</h2>
+      <div id="resultArea" class="border rounded-3 p-3 bg-white text-break" style="min-height: 80px;"></div>
+    </div>
+
+    <div class="card mt-5 p-4 shadow-sm rounded-4">
+      <h2 class="text-center text-info mb-3">📋 Daftar Setoran</h2>
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover align-middle text-center">
+          <thead class="table-primary">
+            <tr>
+              <th>ID</th>
+              <th>Nama</th>
+              <th>Encrypted Amount</th>
+              <th>Decrypted Amount</th>
+              <th>Encrypted Note</th>
+              <th>Decrypted Note</th>
+              <th>Key</th>
+              <th>Tanggal</th>
+              <th>Aksi</th> <!-- ✅ Tambah kolom aksi -->
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Script utama -->
+  <script>
+    const form = document.getElementById('depositForm');
+    const tbody = document.querySelector('tbody');
+    const resultArea = document.getElementById('resultArea');
+
+    let id = 1;
+
+    // Fungsi enkripsi sederhana (Transposisi)
+    function encrypt(text, key) {
+      let encrypted = '';
+      for (let i = 0; i < key; i++) {
+        for (let j = i; j < text.length; j += key) {
+          encrypted += text[j];
+        }
+      }
+      return encrypted;
+    }
+
+    // Fungsi deskripsi sederhana
+    function decrypt(text, key) {
+      const numRows = Math.ceil(text.length / key);
+      let decrypted = Array(text.length).fill('');
+      let index = 0;
+
+      for (let i = 0; i < key; i++) {
+        for (let j = i; j < text.length; j += key) {
+          decrypted[j] = text[index++];
+        }
+      }
+      return decrypted.join('');
+    }
+
+    // Saat form disubmit
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value;
+      const amount = document.getElementById('amount').value;
+      const note = document.getElementById('note').value;
+      const key = parseInt(document.getElementById('key').value);
+
+      const encryptedAmount = encrypt(amount, key);
+      const decryptedAmount = decrypt(encryptedAmount, key);
+      const encryptedNote = encrypt(note, key);
+      const decryptedNote = decrypt(encryptedNote, key);
+
+      // tampilkan hasil enkripsi
+      resultArea.innerHTML = `
+        <p><b>Encrypted Amount:</b> ${encryptedAmount}</p>
+        <p><b>Decrypted Amount:</b> ${decryptedAmount}</p>
+        <p><b>Encrypted Note:</b> ${encryptedNote}</p>
+        <p><b>Decrypted Note:</b> ${decryptedNote}</p>
+      `;
+
+      const now = new Date().toLocaleString('id-ID');
+      const row = document.createElement('tr');
+
+      row.innerHTML = `
+        <td>${id++}</td>
+        <td>${name}</td>
+        <td>${encryptedAmount}</td>
+        <td>${decryptedAmount}</td>
+        <td>${encryptedNote}</td>
+        <td>${decryptedNote}</td>
+        <td>${key}</td>
+        <td>${now}</td>
+        <td>
+          <button class="btn btn-danger btn-sm delete-btn">Hapus</button>
+        </td>
+      `;
+
+      tbody.appendChild(row);
+      form.reset();
+    });
+
+    // Event delegasi: tombol hapus
+    tbody.addEventListener('click', function(e) {
+      if (e.target.classList.contains('delete-btn')) {
+        e.target.closest('tr').remove();
+      }
+    });
+  </script>
 </body>
 </html>
