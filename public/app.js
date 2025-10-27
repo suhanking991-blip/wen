@@ -1,58 +1,103 @@
-const form = document.getElementById("depositForm");
-const resultArea = document.getElementById("resultArea");
-const tableBody = document.querySelector("#depositsTable tbody");
+const apiURL = "http://localhost:5000/api/deposits";
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const name = document.getElementById("name").value;
-  const amount = document.getElementById("amount").value;
-  const note = document.getElementById("note").value;
-  const key = document.getElementById("key").value;
-
-  const data = { name, amount, note, key_used: parseInt(key) };
-
-  const res = await fetch("/api/deposit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  const result = await res.json();
-
-  if (res.ok) {
-    resultArea.innerHTML = `
-      <div class="box">
-        <p><b>Encrypted Amount:</b> ${result.encrypted_amount}</p>
-        <p><b>Decrypted Amount:</b> ${result.decrypted_amount}</p>
-        <p><b>Encrypted Note:</b> ${result.encrypted_note}</p>
-        <p><b>Decrypted Note:</b> ${result.decrypted_note}</p>
-      </div>
-    `;
-    loadDeposits();
-  } else {
-    alert(result.error);
+// Fungsi enkripsi sederhana (Transposisi)
+function encrypt(text, key) {
+  let encrypted = "";
+  for (let i = 0; i < key; i++) {
+    for (let j = i; j < text.length; j += key) {
+      encrypted += text[j];
+    }
   }
-
-  form.reset();
-  document.getElementById("key").value = key;
-});
-
-async function loadDeposits() {
-  const res = await fetch("/api/deposits");
-  const data = await res.json();
-
-  tableBody.innerHTML = data.map(r => `
-    <tr>
-      <td>${r.id}</td>
-      <td>${r.name}</td>
-      <td>${r.encrypted_amount}</td>
-      <td>${r.decrypted_amount}</td>
-      <td>${r.encrypted_note}</td>
-      <td>${r.decrypted_note}</td>
-      <td>${r.key_used}</td>
-      <td>${new Date(r.created_at).toLocaleString()}</td>
-    </tr>
-  `).join("");
+  return encrypted;
 }
 
+// Fungsi dekripsi sederhana
+function decrypt(cipher, key) {
+  const n = Math.ceil(cipher.length / key);
+  let matrix = Array.from({ length: n }, () => "");
+  let idx = 0;
+  for (let i = 0; i < key; i++) {
+    for (let j = 0; j < n; j++) {
+      if (idx < cipher.length) matrix[j] += cipher[idx++];
+    }
+  }
+  return matrix.join("");
+}
+
+// Handle form submit
+document.getElementById("depositForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const name = document.getElementById("name").value.trim();
+  const amount = document.getElementById("amount").value.trim();
+  const note = document.getElementById("note").value.trim();
+  const key = parseInt(document.getElementById("key").value);
+  const date = new Date().toLocaleString();
+
+  // Enkripsi & dekripsi
+  const encryptedAmount = encrypt(amount, key);
+  const decryptedAmount = decrypt(encryptedAmount, key);
+  const encryptedNote = encrypt(note, key);
+  const decryptedNote = decrypt(encryptedNote, key);
+
+  // Tampilkan hasil
+  document.getElementById("resultArea").innerHTML = `
+    <b>Encrypted:</b> ${encryptedAmount} <br>
+    <b>Decrypted:</b> ${decryptedAmount}
+  `;
+
+  // Simpan ke server
+  await fetch(apiURL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name,
+      encryptedAmount,
+      decryptedAmount,
+      encryptedNote,
+      decryptedNote,
+      keyUsed: key,
+      date,
+    }),
+  });
+
+  e.target.reset();
+  loadDeposits();
+});
+
+// Load semua data dari server
+async function loadDeposits() {
+  const res = await fetch(apiURL);
+  const data = await res.json();
+
+  const tbody = document.querySelector("table tbody");
+  tbody.innerHTML = "";
+
+  data.forEach((d) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${d.id}</td>
+      <td>${d.name}</td>
+      <td>${d.encryptedAmount}</td>
+      <td>${d.decryptedAmount}</td>
+      <td>${d.encryptedNote}</td>
+      <td>${d.decryptedNote}</td>
+      <td>${d.keyUsed}</td>
+      <td>${d.date}</td>
+      <td>
+        <button class="btn btn-sm btn-danger" onclick="deleteDeposit(${d.id})">Hapus</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Hapus data
+async function deleteDeposit(id) {
+  if (!confirm("Yakin ingin menghapus data ini?")) return;
+  await fetch(`${apiURL}/${id}`, { method: "DELETE" });
+  loadDeposits();
+}
+
+// Saat halaman dibuka, load data
 loadDeposits();
